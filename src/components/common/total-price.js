@@ -1,10 +1,10 @@
-import React from 'react';
-import styles from './total-price.module.css';
+import React from "react";
+import styles from "./total-price.module.css";
 
-export const TotalPrice = ({ extraClass }) => {
-  const totalPrice = 0;
+export const TotalPrice = ({ extraClass, totalPrice = -1, discount = 100 }) => {
+  /*   const totalPrice = 0;
   const discount = 0;
-
+ */
   return (
     <div className={`${styles.container} ${extraClass}`}>
       <p className={styles.text}>Итого:</p>
