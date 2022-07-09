@@ -1,27 +1,42 @@
 # Learn React
 
-### react-props-drilling-basket-promo
+### REACT-CONTEXT-API
 
-- PROMO10, PROMO20 ...
+В предыдущем уроке вы доработали функциональность корзины интернет-магазина. Теперь ваша задача — провести рефакторинг и при помощи ”React Context API” упростить взаимодействие разработчиков с состоянием приложения, ведь уследить за всеми пропсами становится сложно.
+Сейчас приложение выглядит как страница корзины с возможностью добавлять товары и применять промокоды:
+image
+Внешне всё работает отлично, но внутри есть, что поправить.
+Вносить исправления нужно в нескольких файлах: app/app.js, cart/index.js, cart/products-container.js, cart/products.js, common/total-price.js и ui/promo-button.js.
+Для начала измените глобальный стейт, который хранится в компоненте App. Там определены состояния totalPrice и discount, и они передаются дочерним компонентам с помощью пропсов. Чтобы перенести эти состояния на механизм контекста, создайте файл appContext.js в директории services и определите в нём контексты для скидки и общей стоимости товаров:
+export const TotalPriceContext = React.createContext(null);
+export const DiscountContext = React.createContext(null);
+После этого в компоненте App необходимо реализовать провайдеры контекста, создающие «область видимости», внутри которой любой компонент сможет получить содержимое контекста:
+return (
 
-С помощью проброса пропсов вам нужно решить две проблемы:
-Можно применить промокод, но удалить его не получается.
-Блок «Итого» не отображает сумму заказа.
-Вносить исправления нужно в несколько файлов:
-  
- app/app.js, cart/index.js, cart/products-container.js, common/total-price.js, ui/promo-button.js.
+  <div className={styles.app}>
+    <TotalPriceContext.Provider value={{totalPrice, setTotalPrice}}>
+      <DiscountContext.Provider value={{discount, setDiscount}}>
+        <Title text={'Корзина'} />
+        <Cart />
+        <TotalPrice />
+      </DiscountContext.Provider>
+    </TotalPriceContext.Provider>
+  </div>
+); 
+Теперь вы можете удалить все пропсы, с помощью которых передавали состояние другим компонентам, и получить состояния totalPrice и discount. Для этого нужно воспользоваться хуком useContext():
+const { totalPrice, setTotalPrice } = useContext(TotalPriceContext);
+const { discount, setDiscount } = useContext(DiscountContext); 
+Похожим образом вы можете провести рефакторинг состояния компонента ProductsContainer. В директории services создайте файл productsContext.js и определите в нём контексты данных о товарах и названия промоакции:
+export const DataContext = React.createContext([]);
+export const PromoContext = React.createContext(''); 
+Внутри ProductsContainer создайте провайдеры контекста и в качестве значения передайте им параметры стейтов data и promo:
+<div className={`${styles.container}`}>
+  <DataContext.Provider value={{ data, setData }}>
+    <PromoContext.Provider value={{ promo, setPromo }}>
+// ... 
+Осталось только заменить все пропсы на контекст в дочерних компонентах:
+const { data, setData } = useContext(DataContext);
+const { promo, setPromo } = useContext(PromoContext); 
+Если после всех исправлений приложение ещё работает, значит, рефакторинг удался, и теперь большая часть важных данных передаётся с помощью контекста.
 
-1. Проблема с удалением промокода
-   Изучите компонент PromoButton, в коде есть пара подсказок:
-   const cancelPromo = () => {
-   // TODO: обнулить название акции (promo)
-   // TODO: сбросить скидку (discount)
-   };
-   Нужные вам функции-сеттеры называются setPromo и setDiscount. Вы найдёте их в компоненте ProductsContainer. Просто передайте их в компонент PromoButton в качестве пропсов и вызовите внутри функции cancelPromo.
-   После этого кнопка с промоакцией станет функционировать как надо: при клике на неё состояния названия акции и размера скидки будут сброшены.
-2. Проблема с суммой заказа
-   В компоненте TotalPrice вы обнаружите необходимые ему захардкоженные данные: состояния totalPrice и discount. Сейчас оба этих состояния определены в компоненте ProductsContainer. Ваша задача:
-   поднять стейты totalPrice и discount до общего родительского компонента с TotalPrice и ProductsContainer;
-   через пропсы передать состояния totalPrice и discount всем дочерним компонентам, которые в них нуждаются.
-   image
-   Теперь TotalPrice станет реагировать на изменения в корзине товаров и показывать общую стоимость
+! Не забудьте удалить пропсы в аргументах вызываемых компонентов и промежуточных компонентах, например в cart/index.js.
